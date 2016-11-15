@@ -159,6 +159,10 @@ function getInputHistory() {
 }
 
 function addToHistory(input) {
+	if(!input) {
+		return;
+	}
+	
 	var history = getInputHistory();
 
 	history.push(input);
