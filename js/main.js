@@ -99,19 +99,25 @@ function echo(data, raw) {
 	}
 }
 
-function parseInput(data) {
+function parseInput(data, func_context) {
 	var parts = data.split(" ");
 	var func = parts[0];
 
 	var possible_completions = [];
 
-	for(var i in Object.keys(funcs)) {
-		var to_check = Object.keys(funcs)[i];
+	console.log(func_context);
+	if(!func_context) {
+		func_context = funcs;
+	}
+
+	for(var i in Object.keys(func_context)) {
+		var to_check = Object.keys(func_context)[i];
 
 		if(to_check.indexOf(func) == 0) {
 			possible_completions.push(to_check);
 		}
 	}
+	console.log(possible_completions);
 
 	if(possible_completions.length > 1) {
 		console.log("returning possibles");
@@ -120,8 +126,14 @@ function parseInput(data) {
 		func = possible_completions[0];
 	}
 
-	if(Object.keys(funcs).indexOf(func) != -1) {
-		return funcs[func].main(parts.slice(1).join(" "));
+	console.log(func_context[func]);
+
+	if(Object.keys(func_context).indexOf(func) != -1) {
+		if(typeof func_context[func] === "function") {
+			return func_context[func](parts.slice(1).join(" "));
+		} else {
+			return func_context[func].main(parts.slice(1).join(" "));
+		}
 	} else {
 		try {
 			return window.eval(data);
@@ -223,19 +235,31 @@ $("#main_input").keydown(function(event) {
 
 			try {
 				var out = parseInput($(this).val());
+				console.log(out);
 
 				if(out) {
 					if(Array.isArray(out)) {
+						var hide_keys = ['main', 'settings', 'metadata'];
+						for(var i in hide_keys) {
+							var idx = out.indexOf(hide_keys[i]);
+
+							if(idx != -1) {
+								out.splice(idx, 1);
+							}
+						}
+
 						echo(out.join("\t"));
+
+						$(this).val($(this).val() + " ");
 					} else {
 						echo(out);
+
+						$(this).attr("history_idx", "");
+						addToHistory($(this).val());
+
+						$(this).val("");
 					}
 				}
-
-				$(this).attr("history_idx", "");
-				addToHistory($(this).val());
-
-				$(this).val("");
 			} catch(e) {
 				echo('<span class="error">' + e + '</span>', true);
 			}
@@ -263,3 +287,19 @@ $(document).on('click', 'body', function(event) {
 
 	focusInput();
 });
+
+/* helpers */
+function getFunctionsFromObject(object) {
+	var sub_funcs = Object.keys(object);
+	var to_remove = ['main', 'settings', 'metadata'];
+	
+	for(var i in to_remove) {
+		var idx = sub_funcs.indexOf(to_remove[i]);
+
+		if(idx != -1) {
+			sub_funcs.splice(sub_funcs.indexOf(to_remove[i]), 1);
+		}
+	}
+
+	return sub_funcs;
+}
