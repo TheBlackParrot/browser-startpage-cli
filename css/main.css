@@ -1,0 +1,52 @@
+body {
+	background-color: #373b41;
+	color: #ffffff;
+	font-family: "Roboto Mono";
+	font-size: 10pt;
+	overflow-x: hidden;
+}
+
+.wrapper {
+	height: calc(100vh - 32px);
+	width: calc(100vw - 32px);
+	padding: 16px;
+	overflow-y: auto;
+}
+
+.prompt {
+	opacity: 0.5;
+}
+
+.output {
+	line-height: 16px;
+}
+
+.output_row {
+	display: block;
+	width: 100%;
+	min-height: 16px;
+	line-height: 16px;
+	white-space: pre;
+}
+
+.output_row .prompt {
+	opacity: 0.33;
+}
+
+input[type="text"] { 
+	background: transparent;
+	border: none;
+	outline: none;
+	color: #ffffff;
+	font-family: "Roboto Mono";
+	font-size: 10pt;
+	height: 16px;
+	line-height: 16px;
+	width: calc(100% - 16px);
+}
+
+.error { color: #c66; }
+
+.help_func_name { color: #f0c674; font-weight: 700; }
+.help_func_args { color: #b4b7b4; }
+.help_func_args_name { font-weight: 700; }
