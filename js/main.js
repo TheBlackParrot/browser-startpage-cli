@@ -1,4 +1,4 @@
-const funcs = {
+var funcs = {
 	help: {
 		metadata: {
 			description: "This command"
