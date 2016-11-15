@@ -162,7 +162,7 @@ function addToHistory(input) {
 	if(!input) {
 		return;
 	}
-	
+
 	var history = getInputHistory();
 
 	history.push(input);
@@ -199,7 +199,8 @@ $("#main_input").keydown(function(event) {
 			var idx = parseInt($(this).attr("history_idx") ? $(this).attr("history_idx") : history.length) + 1;
 
 			if(idx >= history.length) {
-				idx = history.length - 1;
+				$(this).val("");
+				break;
 			} else if(idx < 0) {
 				idx = 0;
 			}
@@ -247,4 +248,18 @@ $("#main_input").keydown(function(event) {
 			// clear history
 			break;
 	}
+});
+
+function focusInput() {
+	var pos = $(".wrapper")[0].scrollTop;
+	$("#main_input").focus();
+
+	$(".wrapper")[0].scrollTop = pos;
+}
+focusInput();
+
+$(document).on('click', 'body', function(event) {
+	event.preventDefault();
+
+	focusInput();
 });
