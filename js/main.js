@@ -1,50 +1,4 @@
 var funcs = {
-	help: {
-		metadata: {
-			description: "This command"
-		},
-
-		main: function() {
-			var ret = [];
-
-			for(var func_name in funcs) {
-				var func = funcs[func_name];
-				var parts = [];
-
-				var header = '<span class="help_func_name">' + func_name + '</span>';
-				
-				if(func.metadata) {
-					var meta = func.metadata;
-
-					if(meta.args) {
-						var arg_list = [];
-
-						for(var i in meta.args) {
-							var arg = meta.args[i];
-
-							arg_list.push(arg.type + '<span class="help_func_args_name"> ' + arg.name + '</span>');
-						}
-
-						header = header + ' <span class="help_func_args">(' + arg_list.join(", ") + ')</span>';
-					}
-
-					if(meta.description) {
-						parts.push(meta.description);
-					}
-				}
-
-				parts.unshift(header);
-
-				ret.push(parts.join("\r\n") + "\r\n\r\n");
-			}
-
-			return {
-				raw: true,
-				parts: ret
-			};
-		}
-	},
-
 	eval: {
 		metadata: {
 			args: [
@@ -66,6 +20,28 @@ var funcs = {
 		}
 	},
 
+	date: {
+		metadata: {
+			description: "Prints the current date and time."
+		},
+
+		main: function() {
+			return new Date().toString();
+		}
+	}
+}
+
+var global_funcs = {
+	help: {
+		metadata: {
+			description: "This command"
+		},
+
+		main: function() {
+			return echoHelp(contexts[active_context]);
+		}
+	},
+
 	clear: {
 		metadata: {
 			description: "Clears all output."
@@ -73,8 +49,58 @@ var funcs = {
 
 		main: function() {
 			$(".output").empty();
+			$("#main_input").val("");
 		}
+	}	
+}
+
+function echoHelp(func_context) {
+	if(!func_context) {
+		func_context = funcs;
 	}
+
+	var ret = [];
+
+	for(var func_name in func_context) {
+		var func = func_context[func_name];
+		
+		if(typeof func !== "object") {
+			continue;
+		}
+
+		var parts = [];
+
+		var header = '<span class="help_func_name">' + func_name + '</span>';
+		
+		if(func.metadata) {
+			var meta = func.metadata;
+
+			if(meta.args) {
+				var arg_list = [];
+
+				for(var i in meta.args) {
+					var arg = meta.args[i];
+
+					arg_list.push(arg.type + '<span class="help_func_args_name"> ' + arg.name + '</span>');
+				}
+
+				header = header + ' <span class="help_func_args">(' + arg_list.join(", ") + ')</span>';
+			}
+
+			if(meta.description) {
+				parts.push(meta.description);
+			}
+		}
+
+		parts.unshift(header);
+
+		ret.push(parts.join("\r\n") + "\r\n\r\n");
+	}
+
+	return {
+		raw: true,
+		parts: ret
+	};
 }
 
 function echo(data, raw) {
@@ -99,6 +125,9 @@ function echo(data, raw) {
 	}
 }
 
+var contexts = [funcs];
+var active_context = 0;
+
 function parseInput(data, func_context) {
 	var parts = data.split(" ");
 	var func = parts[0];
@@ -107,11 +136,24 @@ function parseInput(data, func_context) {
 
 	console.log(func_context);
 	if(!func_context) {
-		func_context = funcs;
+		func_context = $.extend({}, contexts[active_context], global_funcs);
 	}
 
-	for(var i in Object.keys(func_context)) {
-		var to_check = Object.keys(func_context)[i];
+	var _fn = Object.keys(func_context);
+	var func_names = [];
+	for(var i in _fn) {
+		var _ctx = func_context[_fn[i]];
+		console.log(_ctx);
+		if(typeof _ctx === "object" || typeof _ctx === "function") {
+			console.log("SHOULD ADD " + _fn[i]);
+			func_names.push(_fn[i]);
+		}
+	}
+	func_names.push('exit');
+	console.log(func_names);
+
+	for(var i in func_names) {
+		var to_check = func_names[i];
 
 		if(to_check.indexOf(func) == 0) {
 			possible_completions.push(to_check);
@@ -128,9 +170,16 @@ function parseInput(data, func_context) {
 
 	console.log(func_context[func]);
 
+	if(func == "exit") {
+		var old_prompt = contexts[active_context].prompt;
+		exitShell();
+		return "Leaving " + old_prompt + "...";
+	}
+
+	// purposely going back to Object.keys, exit is pre-defined
 	if(Object.keys(func_context).indexOf(func) != -1) {
-		if(typeof func_context[func] === "function") {
-			return func_context[func](parts.slice(1).join(" "));
+		if(func_context[func].shell) {
+			enterShell(func, func_context[func]);
 		} else {
 			return func_context[func].main(parts.slice(1).join(" "));
 		}
@@ -141,6 +190,35 @@ function parseInput(data, func_context) {
 			throw err;
 		}
 	}
+}
+
+function enterShell(prompt, context) {
+	contexts.push(context);
+	active_context++;
+	changePrompt(context.prompt);
+}
+
+function exitShell() {
+	if(contexts.length > 1) {
+		contexts.pop(contexts[active_context]);
+	}
+
+	active_context--;
+	if(active_context < 0) {
+		active_context = 0;
+	}
+
+	var prompt = "";
+	if("prompt" in contexts[active_context]) {
+		prompt = contexts[active_context].prompt;
+	}
+
+	changePrompt(prompt);
+}
+
+function changePrompt(data) {
+	$("#main_prompt").html(data + ">&nbsp;");
+	$("#main_input").val("");
 }
 
 function createRow(parts) {
@@ -154,7 +232,7 @@ function createRow(parts) {
 }
 
 function outputCurrentPrompt() {
-	var prompt = $("#main_prompt").clone();
+	var prompt = $("#main_prompt").clone().attr("id", "");
 	var input = $("#main_input").val().replace(/\</g, "&lt;");
 
 	$(".output").append(createRow([prompt, input]));
@@ -239,7 +317,7 @@ $("#main_input").keydown(function(event) {
 
 				if(out) {
 					if(Array.isArray(out)) {
-						var hide_keys = ['main', 'settings', 'metadata'];
+						var hide_keys = ['main', 'metadata'];
 						for(var i in hide_keys) {
 							var idx = out.indexOf(hide_keys[i]);
 
@@ -249,8 +327,6 @@ $("#main_input").keydown(function(event) {
 						}
 
 						echo(out.join("\t"));
-
-						$(this).val($(this).val() + " ");
 					} else {
 						echo(out);
 
@@ -302,4 +378,11 @@ function getFunctionsFromObject(object) {
 	}
 
 	return sub_funcs;
+}
+
+function lockPrompt(state) {
+	$("#main_input").prop("disabled", state);
+	if(!state) {
+		focusInput();
+	}
 }
