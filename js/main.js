@@ -56,7 +56,9 @@ var global_funcs = {
 
 function echoHelp(func_context) {
 	if(!func_context) {
-		func_context = funcs;
+		func_context = $.extend({}, contexts[active_context], global_funcs);
+	} else {
+		func_context = $.extend({}, func_context, global_funcs);
 	}
 
 	var ret = [];
@@ -70,7 +72,12 @@ function echoHelp(func_context) {
 
 		var parts = [];
 
-		var header = '<span class="help_func_name">' + func_name + '</span>';
+		if(func.shell) {
+			var header = '<span class="help_func_shell_name">' + func_name + '</span>';
+			parts.unshift('<span class="help_func_args"><em>(interactive shell)</em></span>');
+		} else {
+			var header = '<span class="help_func_name">' + func_name + '</span>';
+		}
 		
 		if(func.metadata) {
 			var meta = func.metadata;
@@ -137,6 +144,8 @@ function parseInput(data, func_context) {
 	console.log(func_context);
 	if(!func_context) {
 		func_context = $.extend({}, contexts[active_context], global_funcs);
+	} else {
+		func_context = $.extend({}, func_context, global_funcs);
 	}
 
 	var _fn = Object.keys(func_context);

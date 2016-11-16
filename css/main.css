@@ -68,5 +68,6 @@ input[type="text"] {
 .error { color: #c66; }
 
 .help_func_name { color: #f0c674; font-weight: 700; }
+.help_func_shell_name { color: #b5bd68; font-weight: 700; }
 .help_func_args { color: #b4b7b4; }
 .help_func_args_name { font-weight: 700; }

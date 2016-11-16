@@ -112,6 +112,21 @@ funcs.twitch = {
 	}
 }
 
+funcs.twitch.traversal_test = {
+	shell: true,
+	prompt: "wow",
+
+	test: {
+		metadata: {
+			description: "nice"
+		},
+
+		main: function() {
+			return "meme";
+		}
+	}
+};
+
 if(window.location.hash.indexOf("#access_token=") != -1) {
 	localStorage.setItem("twitch_access_token", window.location.hash.replace("#access_token=", ""));
 }
